@@ -5,45 +5,71 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
+	"unicode"
 )
-
-var newline rune = '\n'
 
 func main() {
 	if len(os.Args) < 2 {
-		count(os.Stdin, "")
+		count(os.Stdin)
 	} else {
-		lines := 0
-		words := 0
-		chars := 0
+		lines, words, chars := 0, 0, 0
 		for _, path := range os.Args[1:] {
 			file, err := os.Open(path)
 			if err != nil {
 				panic(err)
 			}
-			l, w, c := count(file, path)
+			l, w, c, _ := count(file)
 			lines += l
 			words += w
 			chars += c
+			fmt.Printf("\t%d\t%d\t%d %s\n", lines, words, chars, path)
 		}
 
-		fmt.Printf("\t%d\t%d\t%d %s\n", lines, words, chars, "total")
+		if len(os.Args) > 2 {
+			fmt.Printf("\t%d\t%d\t%d %s\n", lines, words, chars, "total")
+		}
 	}
 }
 
-func count(r io.Reader, path string) (lines int, words int, chars int) {
-	sc := bufio.NewScanner(r)
-	l := 0
-	w := 0
-	c := 0
-	for sc.Scan() {
+func count(reader io.Reader) (lines int, words int, chars int, bytes int) {
+	l, w, c, b := 0, 0, 0, 0
+	runeReader := bufio.NewReader(reader)
+
+	for {
+		lw, lc, lb, err := readLine(runeReader)
+		if err == io.EOF {
+			return l, w, c, b
+		}
+		if err != nil {
+			panic(err)
+		}
 		l++
-		w += len(strings.Fields(sc.Text()))
-		c += len(sc.Text()) + 1
+		w += lw
+		c += lc
+		b += lb
 	}
 
-	fmt.Printf("\t%d\t%d\t%d %s\n", l, w, c, path)
+	return l, w, c, b
+}
 
-	return l, w, c
+func readLine(reader *bufio.Reader) (int, int, int, error) {
+	w, c, b := 0, 0, 0
+	prevRune := ' '
+	for {
+		r, size, err := reader.ReadRune()
+		if err != nil {
+			return w, c, b, err
+		}
+		c++
+		b += size
+		if !unicode.IsSpace(r) && unicode.IsSpace(prevRune) {
+			w++
+		}
+		if r == '\n' {
+			return w, c, b, nil
+		}
+		prevRune = r
+	}
+
+	return w, c, b, nil
 }
