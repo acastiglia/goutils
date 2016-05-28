@@ -1,11 +1,17 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"os"
 	"strings"
 )
 
 func main() {
-	fmt.Println(strings.Join(os.Args[1:], " "))
+	omitNewline := flag.Bool("n", false, "Do not print a trailing newline character")
+	flag.Parse()
+
+	fmt.Print(strings.Join(flag.Args(), " "))
+	if !*omitNewline {
+		fmt.Println()
+	}
 }
