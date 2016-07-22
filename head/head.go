@@ -37,13 +37,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(flag.Args()) == 1 {
-		file, err := tryOpen(flag.Args()[0])
-		if err != nil {
-			os.Exit(1)
-		}
-		head(file, *count)
-		os.Exit(0)
+	if len(flag.Args()) == 0 {
+		head(os.Stdin, *count)
 	}
 
 	for i := 0; i < len(flag.Args()); i++ {
